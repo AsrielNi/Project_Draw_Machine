@@ -1,0 +1,81 @@
+20250604_Log_01.txt
+
+摘要：
+    設計抽獎池和抽選對象的介面。
+    自動化產生抽選對象所需要的參數的輸入框。
+
+
+新增：
+    [Banner.py]
+        <IDrawMember>
+            抽選對象的介面，描述抽選對象最基本必須具備的訊息。
+        類別變數(DM)
+            現階段綁定<IDrawMember>。
+        <BaseDrawMember>
+            <IDrawMember>的實作，目前僅實現<IDrawMember>的規範，並未增加任何額外資訊。
+        <IBanner>
+            抽選池的介面，描述抽選池必須做到的行為和具有哪些屬性。
+        <BaseBanner>
+            <IBanner>的實作，使用泛型語法來自動調整抽獎池的所要記述的抽選對象。
+    [main.py]
+        <AddDrawMemeberPage>
+            {__clear_input}
+                自動清空使用者輸入值的方法。
+
+
+移除：
+    [main.py]
+        <Banner>
+            邏輯和想法轉移至[Banner.py].<BaseBanner>，所以移除。
+
+
+改變：
+    [main.py]
+        <AddDrawMemeberPage>
+            {__init__}
+                修改參數的型別註釋。
+                增加一些物件。
+            {__confirm_member}
+                邏輯完全重構，使其可以自動獲得對應的使用者輸入值並創建指定的抽選對象物件。
+                加入自動轉換<str>至型別註釋的邏輯。
+            {layout}
+                自動化創建抽選對象的參數對應的輸入框。
+        <RemoveDrawMemeberPage>
+            {__init__}
+                修改參數的型別註釋。
+            {__confirm_member}
+                變數名稱(draw_member_dict)變更為(draw_members)
+        <DrawPage>
+            {__init__}
+                修改抽獎池使用的類別。
+            {open_add_draw_member_page}
+                修改參數的型別註釋。
+            {open_remove_draw_member_page}
+                修改參數的型別註釋。
+            {refresh_draw_container}
+                變數名稱(draw_member_dict)變更為(draw_members)
+            {draw}
+                修改參數的型別註釋。
+                變數名稱(draw_member_dict)變更為(draw_members)
+
+
+
+可能的更新和優化想法(不一定會實現)：
+    結構切割
+        分為主頁面(MainPage)和副頁面(SubPage)。
+        建立特定想法的介面。
+    結構擴充
+        分頁模式。
+        日誌系統。
+        單一抽獎機具有多個抽獎池(Banner)。
+        外部導入抽獎池的資訊，可能使用'json'檔來實現。
+    功能擴充
+        紀錄並顯示抽獎的次數和結果的動態柱狀圖。
+    額外資訊
+        [S]每個被抽選的目標新增配置比重。
+    其他
+        抽獎動畫或圖片(目前沒有想法)。
+
+
+備註：
+    目前尚未加入任何的註解和註釋，預定在達到一定程度的進度後，再開始補述。
