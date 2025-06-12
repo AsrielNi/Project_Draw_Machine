@@ -31,14 +31,18 @@ class BaseDrawMember(IDrawMember):
         del temp_check_dict
         return cls._EXPOSE_OPTS
     def __init__(self, name: str, proportion: int = 1):
-        self._name = name
-        self._proportion = proportion
+        self._member_info_dict: dict[str, str | int] = dict()
+        self._member_info_dict["name"] = name
+        self._member_info_dict["proportion"] = proportion
     @property
-    def name(self):
-        return self._name
+    def member_info(self):
+        return self._member_info_dict
     @property
-    def proportion(self):
-        return self._proportion
+    def name(self) -> str:
+        return self._member_info_dict["name"]
+    @property
+    def proportion(self) -> int:
+        return self._member_info_dict["proportion"]
 
 
 class IBanner(ABC):

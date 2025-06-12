@@ -15,6 +15,7 @@ class AddDrawMemeberPage:
         self._interact_window = tkinter.Toplevel()
         self._interact_window.geometry("200x200+100+100")
         self._interact_window.protocol("WM_DELETE_WINDOW", self.__on_closing)
+        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
     def __on_closing(self):
         self._parent_page.add_button.config(state="normal")
         self._interact_window.destroy()
@@ -50,18 +51,22 @@ class AddDrawMemeberPage:
         self._draw_member_opts_frame = tkinter.Frame(self._interact_window)
         self._draw_member_opts_frame.pack(side="top", fill="x")
         for dm_opt in self._banner.draw_member_type._expose_opts():
-            pair_frame = tkinter.Frame(self._draw_member_opts_frame)
-            pair_frame.pack(side="top", fill="both")
-            dm_opt_label = tkinter.Label(pair_frame, text=dm_opt)
-            dm_opt_label.pack(side="left", fill="both")
+            opt_frame = tkinter.Frame(self._draw_member_opts_frame)
+            opt_frame.pack(side="top", fill="both")
+            opt_frame.columnconfigure(index=0, weight=2)
+            opt_frame.columnconfigure(index=1, weight=3)
+            dm_opt_label = tkinter.Label(opt_frame, text=dm_opt, **self._shared_cnf)
+            dm_opt_label.grid(row=0, column=0, sticky="news")
             dm_opt_sv = tkinter.StringVar()
-            dm_opt_entry = tkinter.Entry(pair_frame, textvariable=dm_opt_sv)
-            dm_opt_entry.pack(side="left", fill="both", expand=1)
+            dm_opt_entry = tkinter.Entry(opt_frame, textvariable=dm_opt_sv, **self._shared_cnf)
+            dm_opt_entry.grid(row=0, column=1, sticky="news")
             self._draw_member_opts[dm_opt] = dm_opt_sv
-        self._confirm_but = tkinter.Button(self._interact_window, text="確認", command=self.__confirm_member)
-        self._confirm_but.pack()
-        self._cancel_but = tkinter.Button(self._interact_window, text="取消", command=self.__cancel)
-        self._cancel_but.pack()
+        self._button_frame = tkinter.Frame(self._interact_window)
+        self._button_frame.pack(fill="x", pady=10)
+        self._confirm_but = tkinter.Button(self._button_frame, text="確認", command=self.__confirm_member)
+        self._confirm_but.pack(side="left")
+        self._cancel_but = tkinter.Button(self._button_frame, text="取消", command=self.__cancel)
+        self._cancel_but.pack(side="left")
     def render(self):
         self.layout()
 
@@ -73,8 +78,9 @@ class RemoveDrawMemeberPage:
         self._interact_window.geometry("200x200+100+100")
         self._interact_window.protocol("WM_DELETE_WINDOW", self.__on_closing)
         self._banner = banner
+        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
     def __on_closing(self):
-        self._parent_page.add_button.config(state="normal")
+        self._parent_page.remove_button.config(state="normal")
         self._interact_window.destroy()
     def __confirm_member(self):
         target_draw_member_name = self._sv.get()
@@ -84,15 +90,21 @@ class RemoveDrawMemeberPage:
     def __cancel(self):
         self.__on_closing()
     def layout(self):
-        self._name_label = tkinter.Label(self._interact_window, text="名稱")
-        self._name_label.pack()
+        self._opt_frame = tkinter.Frame(self._interact_window)
+        self._opt_frame.pack(fill="x")
+        self._opt_frame.columnconfigure(index=0, weight=2)
+        self._opt_frame.columnconfigure(index=1, weight=3)
+        self._name_label = tkinter.Label(self._opt_frame, text="名稱", **self._shared_cnf)
+        self._name_label.grid(row=0, column=0, sticky="news")
         self._sv = tkinter.StringVar()
-        self._entry = tkinter.Entry(self._interact_window, textvariable=self._sv)
-        self._entry.pack()
-        self._confirm_but = tkinter.Button(self._interact_window, text="確認", command=self.__confirm_member)
-        self._confirm_but.pack()
-        self._cancel_but = tkinter.Button(self._interact_window, text="取消", command=self.__cancel)
-        self._cancel_but.pack()
+        self._entry = tkinter.Entry(self._opt_frame, textvariable=self._sv, **self._shared_cnf)
+        self._entry.grid(row=0, column=1, sticky="news")
+        self._button_frame = tkinter.Frame(self._interact_window)
+        self._button_frame.pack(fill="x", pady=10)
+        self._confirm_but = tkinter.Button(self._button_frame, text="確認", command=self.__confirm_member)
+        self._confirm_but.pack(side="left")
+        self._cancel_but = tkinter.Button(self._button_frame, text="取消", command=self.__cancel)
+        self._cancel_but.pack(side="left")
     def render(self):
         self.layout()
 
@@ -100,11 +112,29 @@ class RemoveDrawMemeberPage:
 class DrawPage:
     def __init__(self):
         self._top_window = tkinter.Tk()
-        self._top_window.geometry("600x400+50+50")
+        self._top_window.geometry("800x600+50+50")
         self._banner = BaseBanner[BaseDrawMember]("Test")
+        self._column_configs = (
+            {"index": 0, "weight": 3},
+            {"index": 1, "weight": 2}
+        )
+        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
     def layout(self):
-        self.proportion_frame = tkinter.Frame(self._top_window, relief="ridge", borderwidth=3)
-        self.proportion_frame.place(relx=0, rely=0, relwidth=0.25, relheight=1)
+        self._draw_member_lframe = tkinter.LabelFrame(self._top_window, text="抽獎池內容")
+        self._draw_member_lframe.place(relx=0, rely=0, relwidth=0.25, relheight=1)
+    
+        self._column_frame = tkinter.Frame(self._draw_member_lframe)
+        self._column_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
+        for col_config in self._column_configs:
+            self._column_frame.columnconfigure(**col_config)
+        self._column_dict: dict[str, tkinter.Label] = dict()
+        for idx, ex_opts in enumerate(self._banner.draw_member_type._expose_opts()):
+            col_label = tkinter.Label(self._column_frame, text=ex_opts, **self._shared_cnf)
+            col_label.grid(row=0, column=idx, sticky="news")
+            self._column_dict[ex_opts] = col_label
+        
+        self._draw_content_frame = tkinter.Frame(self._draw_member_lframe)
+        self._draw_content_frame.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
 
         self.draw_frame = tkinter.Frame(self._top_window)
         self.draw_frame.place(relx=0.25, rely=0, relwidth=0.75, relheight=1)
@@ -152,19 +182,28 @@ class DrawPage:
         add_page = AddDrawMemeberPage(self, banner)
         add_page.render()
     def open_remove_draw_member_page(self, banner: BaseBanner[BaseDrawMember]):
-        self.add_button.config(state="disabled")
+        self.remove_button.config(state="disabled")
         add_page = RemoveDrawMemeberPage(self, banner)
         add_page.render()
     def refresh_draw_container(self):
-        for widget in self.proportion_frame.winfo_children():
+        for widget in self._draw_content_frame.winfo_children():
             widget.destroy()
-        for draw_member_name in self._banner.draw_members.keys():
-            new_lebel = tkinter.Label(self.proportion_frame, text=draw_member_name)
-            new_lebel.pack()
+        for dm in self._banner.draw_members.values():
+            dm_frame = tkinter.Frame(self._draw_content_frame)
+            dm_frame.pack(fill="x")
+            for col_config in self._column_configs:
+                dm_frame.columnconfigure(**col_config)
+            for idx, dm_key in enumerate(dm._expose_opts()):
+                value_label = tkinter.Label(dm_frame, text=dm.member_info[dm_key], **self._shared_cnf)
+                value_label.grid(row=0, column=idx, sticky="news")
     def draw(self, banner: BaseBanner[BaseDrawMember]):
-        population = [draw_m for draw_m in banner.draw_members.keys()]
-        result_member = random.choice(population)
-        self.result_label["text"] = result_member
+        draw_name_list = list()
+        draw_proportion_list = list()
+        for draw_m in banner.draw_members.values():
+            draw_name_list.append(draw_m.name)
+            draw_proportion_list.append(draw_m.proportion)
+        result = random.choices(draw_name_list, weights=draw_proportion_list)
+        self.result_label["text"] = result
 
 
 
