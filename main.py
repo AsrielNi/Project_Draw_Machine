@@ -110,16 +110,28 @@ class RemoveDrawMemeberPage:
 
 
 class DrawPage:
-    def __init__(self):
-        self._top_window = tkinter.Tk()
-        self._top_window.geometry("800x600+50+50")
-        self._banner = BaseBanner[BaseDrawMember]("Test")
+    def __init__(self, page_name: str = "Draw", dm_type: type[IDrawMember] = BaseDrawMember):
+        self._layout_flag = False
+        self._page_name = page_name
+        self._master = None
+        self._banner = BaseBanner[dm_type](page_name)
         self._column_configs = (
             {"index": 0, "weight": 3},
             {"index": 1, "weight": 2}
         )
         self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
+    def _decide_master(self):
+        if self._master == None:
+            top_window = tkinter.Tk()
+            top_window.geometry("800x600+50+50")
+            return top_window
+        else:
+            page_frame = tkinter.Frame(self._master)
+            return page_frame
+    def set_master(self, master: tkinter.Frame):
+        self._master = master
     def layout(self):
+        self._top_window = self._decide_master()
         self._draw_member_lframe = tkinter.LabelFrame(self._top_window, text="抽獎池內容")
         self._draw_member_lframe.place(relx=0, rely=0, relwidth=0.25, relheight=1)
     
@@ -176,6 +188,15 @@ class DrawPage:
         self.refresh_draw_container()
     def start(self):
         self._top_window.mainloop()
+    def show(self):
+        if self._layout_flag == False:
+            self.layout()
+            self._top_window.pack(fill="both", expand=1)
+            self._layout_flag = True
+        else:
+            self._top_window.pack(fill="both", expand=1)
+    def hide(self):
+        self._top_window.pack_forget()
     ######## 行為 ########
     def open_add_draw_member_page(self, banner: BaseBanner[BaseDrawMember]):
         self.add_button.config(state="disabled")
@@ -204,13 +225,163 @@ class DrawPage:
             draw_proportion_list.append(draw_m.proportion)
         result = random.choices(draw_name_list, weights=draw_proportion_list)
         self.result_label["text"] = result
+    @property
+    def page_name(self) -> str:
+        return self._page_name
+
+
+class AddBannerPage:
+    def __init__(self, parent_manager: DrawPageManager):
+        self._parent_manager = parent_manager
+        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
+    def __on_closing(self):
+        self._parent_manager._operate_menu.entryconfig("創建抽獎池", state="normal")
+        self._interact_window.destroy()
+    def __confirm_member(self):
+        page_name = self._name_sv.get()
+        if self._parent_manager._tab_page_dict.get(page_name) != None:
+            raise KeyError("")
+        else:
+            dp = DrawPage(page_name)
+            dp.set_master(self._parent_manager._page_frame)
+            self._parent_manager._tab_page_dict[page_name] = dp
+            self.__clear_input()
+            self._parent_manager._auto_build_page_button()
+    def __clear_input(self):
+        self._name_sv.set("")
+    def __cancel(self):
+        self.__on_closing()
+    def layout(self):
+        self._interact_window = tkinter.Toplevel()
+        self._interact_window.title("創建抽獎池")
+        self._interact_window.geometry("200x150+150+150")
+        self._banner_name_frame = tkinter.Frame(self._interact_window)
+        self._banner_name_frame.pack(side="top", fill="x")
+        self._banner_name_frame.columnconfigure(index=0, weight=2)
+        self._banner_name_frame.columnconfigure(index=1, weight=3)
+        self._name_label = tkinter.Label(self._banner_name_frame, text="名稱", **self._shared_cnf)
+        self._name_label.grid(row=0, column=0, sticky="news")
+        self._name_sv = tkinter.StringVar()
+        self._name_entry = tkinter.Entry(self._banner_name_frame, textvariable=self._name_sv, **self._shared_cnf)
+        self._name_entry.grid(row=0, column=1, sticky="news")
+        self._button_frame = tkinter.Frame(self._interact_window)
+        self._button_frame.pack(fill="x", pady=10)
+        self._confirm_but = tkinter.Button(self._button_frame, text="確認", command=self.__confirm_member)
+        self._confirm_but.pack(side="left")
+        self._cancel_but = tkinter.Button(self._button_frame, text="取消", command=self.__cancel)
+        self._cancel_but.pack(side="left")
+    def render(self):
+        self.layout()
+
+
+class RemoveBannerPage:
+    def __init__(self, parent_manager: DrawPageManager):
+        self._parent_manager = parent_manager
+        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
+    def __on_closing(self):
+        self._parent_manager._operate_menu.entryconfig("刪除抽獎池", state="normal")
+        self._interact_window.destroy()
+    def __confirm_member(self):
+        page_name = self._name_sv.get()
+        if self._parent_manager._tab_page_dict.get(page_name) == None:
+            raise KeyError("")
+        else:
+            self._parent_manager._tab_page_dict[page_name]._top_window.destroy()
+            del self._parent_manager._tab_page_dict[page_name]
+            self._parent_manager._auto_build_page_button()
+            self.__clear_input()
+    def __clear_input(self):
+        self._name_sv.set("")
+    def __cancel(self):
+        self.__on_closing()
+    def layout(self):
+        self._interact_window = tkinter.Toplevel()
+        self._interact_window.title("移除抽獎池")
+        self._interact_window.geometry("200x150+150+150")
+        self._banner_name_frame = tkinter.Frame(self._interact_window)
+        self._banner_name_frame.pack(side="top", fill="x")
+        self._banner_name_frame.columnconfigure(index=0, weight=2)
+        self._banner_name_frame.columnconfigure(index=1, weight=3)
+        self._name_label = tkinter.Label(self._banner_name_frame, text="名稱", **self._shared_cnf)
+        self._name_label.grid(row=0, column=0, sticky="news")
+        self._name_sv = tkinter.StringVar()
+        self._name_entry = tkinter.Entry(self._banner_name_frame, textvariable=self._name_sv, **self._shared_cnf)
+        self._name_entry.grid(row=0, column=1, sticky="news")
+        self._button_frame = tkinter.Frame(self._interact_window)
+        self._button_frame.pack(fill="x", pady=10)
+        self._confirm_but = tkinter.Button(self._button_frame, text="確認", command=self.__confirm_member)
+        self._confirm_but.pack(side="left")
+        self._cancel_but = tkinter.Button(self._button_frame, text="取消", command=self.__cancel)
+        self._cancel_but.pack(side="left")
+    def render(self):
+        self.layout()
+
+
+class DrawPageManager:
+    def __init__(self, window_name: str):
+        self._window_name = window_name
+        self._tab_page_dict: dict[str, DrawPage] = dict()
+        self._current_page_name = None
+        self.layout()
+    def layout(self):
+        self._top_window = tkinter.Tk()
+        self._top_window.title(self._window_name)
+        self._top_window.geometry("800x600+100+100")
+        self._menubar_frame = tkinter.Frame(self._top_window, background="#D2CACA")
+        self._menubar_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
+        self._tab_frame = tkinter.Frame(self._top_window)
+        self._tab_frame.place(relx=0, rely=0.05, relwidth=1, relheight=0.05)
+        self._page_frame = tkinter.Frame(self._top_window, background="#4757BF")
+        self._page_frame.place(relx=0, rely=0.1, relwidth=1, relheight=0.9)
+        self._operate_mb = tkinter.Menubutton(
+            self._menubar_frame,
+            text="操作",
+            font=("標楷體", 12, "bold"),
+            width=8,
+            background=self._menubar_frame["background"]
+        )
+        self._operate_mb.pack(side="left")
+        self._operate_menu = tkinter.Menu(self._operate_mb, tearoff=0, font=("標楷體", 12))
+        self._operate_menu.add_command(label="創建抽獎池", command=self.command_add_banner_page)
+        self._operate_menu.add_command(label="刪除抽獎池", command=self.command_remove_banner_page)
+        self._operate_mb.config(menu=self._operate_menu)
+    def change_page(self, page_name: str):
+        if self._current_page_name == None:
+            self._tab_page_dict[page_name].show()
+            self._current_page_name = page_name
+        elif self._current_page_name != page_name:
+            if self._tab_page_dict.get(self._current_page_name) != None:
+                self._tab_page_dict[self._current_page_name].hide()
+            self._tab_page_dict[page_name].show()
+            self._current_page_name = page_name
+    def command_add_banner_page(self):
+        add_banner_page = AddBannerPage(self)
+        add_banner_page.render()
+    def command_remove_banner_page(self):
+        add_banner_page = RemoveBannerPage(self)
+        add_banner_page.render()
+    def command_warp(self, func, *args, **kwargs):
+        # 用於迴避lambda被視為同一個函式的問題
+        def wrap_func():
+            func(*args, **kwargs)
+        return wrap_func
+    def _auto_build_page_button(self):
+        for widget in self._tab_frame.winfo_children():
+            widget.destroy()
+        if len(self._tab_page_dict) == 0:
+            pass
+        else:
+            for page_name in self._tab_page_dict.keys():
+                page_button = tkinter.Button(self._tab_frame, text=page_name, command=self.command_warp(self.change_page, page_name))
+                page_button.pack(side="left")
+    def run(self):
+        self._top_window.mainloop()
 
 
 
 def main():
-    dp = DrawPage()
-    dp.render()
-    dp.start()
+    dm = DrawPageManager("測試")
+    dm.run()
 
 
 if __name__ == "__main__":
