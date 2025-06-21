@@ -1,0 +1,93 @@
+20250621_Log_01.txt
+
+摘要：
+    優化分頁管理器的結構。
+    美化分頁管理器的版面。
+    強化分頁管理器內聚。
+    整理專案結構。
+    分頁化的頁面可以獨立顯示為單一頁面。
+
+
+新增：
+    [TabSystem.py]
+        分頁模式相關的類別都歸納於此。
+        <ITabPage>
+            分頁的介面，藉由繼承該介面使<TabPageManager>可以使用。
+        <TabPage>
+            <ITabPage>的部分實作類別。
+        <TabPageManager>
+            管理分頁用的管理器。
+        <CreateTabPage>
+            專門給<TabPageManager>使用的類別，用於創建分頁。
+        <RemoveTabPage>
+            專門給<TabPageManager>使用的類別，用於刪除分頁。
+    [Page.py]
+        目前規劃所有名稱結尾為'Page'的類別都歸納於此。
+        <TestPage>
+            測試<TabPageManager>是否正常的類別，未來預計會移除。
+        <DrawPage>
+            來自[main.py]
+        <AddDrawMemeberPage>
+            來自[main.py]
+        <RemoveDrawMemeberPage>
+            來自[main.py]
+
+
+改變：
+    [main.py]
+        <DrawPage>
+            轉移至[src].[Page.py]。
+            新增繼承的父類<TabPage>。
+            大部分的方法都沿用父類的。
+            {__init__}
+                部分變數改為沿用父類的。
+            {layout}
+                父元件的設置邏輯轉移至建構式。
+        <AddDrawMemeberPage>
+            轉移至[src].[Page.py]。
+        <RemoveDrawMemeberPage>
+            轉移至[src].[Page.py]。
+
+
+移除：
+    [main.py]
+        <DrawPage>
+            {set_master}
+                因為設定的方式改為建構時執行，故不需要此方法。
+            {render}
+                因為邏輯的簡化而移除此方法。
+            {start}
+                由父類<TabPage>的{run}方法取代。
+            {show}
+                由父類<TabPage>的{_show}方法取代。
+            {hide}
+                由父類<TabPage>的{_hide}方法取代。
+        <DrawPageManager>
+            部分邏輯轉移至<TabPageManager>並且由<TabPageManager>取代。
+        <AddBannerPage>
+            部分邏輯轉移至<CreateTabPage>並且由<CreateTabPage>取代。
+        <RemoveBannerPage>
+            部分邏輯轉移至<RemoveTabPage>並且由<RemoveTabPage>取代。
+
+
+可能的更新和優化想法(不一定會實現)：
+    結構切割
+        分為主頁面(MainPage)和副頁面(SubPage)。 -> [S]分為分頁(TabPage)和普通頁面。
+        分頁模式的介面。 -> [S]分頁管理器的建立。
+    結構擴充
+        預設的首頁。
+        [S]分頁模式。
+        日誌系統。
+        [S]單一抽獎機具有多個抽獎池(Banner)。
+        外部導入抽獎池的資訊，可能使用'json'檔來實現。
+    功能擴充
+        [S]使比重影響抽獎機率。
+        紀錄並顯示抽獎的次數和結果的動態柱狀圖。
+    額外資訊
+        [S]每個被抽選的目標新增配置比重。
+    其他
+        抽獎動畫或圖片(目前沒有想法)。
+
+
+備註：
+    目前尚未加入任何的註解和註釋，預定在達到一定程度的進度後，再開始補述。
