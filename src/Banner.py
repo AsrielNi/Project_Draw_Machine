@@ -9,6 +9,10 @@ class IDrawMember(ABC):
         raise NotImplementedError()
     @property
     @abstractmethod
+    def member_info(self) -> dict[str, str | int]:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
     def name(self) -> str:
         raise NotImplementedError()
     @property

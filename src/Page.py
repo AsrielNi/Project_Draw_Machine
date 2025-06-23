@@ -4,7 +4,7 @@ from inspect import signature, _empty
 from typing import Any
 from .TabSystem import TabPage
 from .Banner import BaseBanner, IDrawMember, BaseDrawMember
-
+from .GUIunit import RowFrameFactory, RowFrame
 
 ########## 測試相關頁面
 class TestPage(TabPage):
@@ -18,29 +18,18 @@ class DrawPage(TabPage):
     def __init__(self, page_name, attach_manager = None, dm_type: type[IDrawMember] = BaseDrawMember):
         TabPage.__init__(self, page_name, attach_manager)
         self._banner = BaseBanner[dm_type](page_name)
-        self._column_configs = (
-            {"index": 0, "weight": 3},
-            {"index": 1, "weight": 2}
-        )
-        self._shared_cnf = {"relief": "solid", "borderwidth": 1, "width": 1}
+        self._draw_member_frames: dict[str, RowFrame] = dict()
+        self._row_content_factory = RowFrameFactory(1)
+        self._row_content_factory.set_individual_column_config(0, {"weight": 3})
+        self._row_content_factory.set_individual_column_config(1, {"weight": 2})
     def layout(self):
         self._draw_member_lframe = tkinter.LabelFrame(self._top_window, text="抽獎池內容")
         self._draw_member_lframe.place(relx=0, rely=0, relwidth=0.25, relheight=1)
-    
-        self._column_frame = tkinter.Frame(self._draw_member_lframe)
-        self._column_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
-        self._column_frame.columnconfigure(index=0, weight=3)
-        self._column_frame.columnconfigure(index=1)
-        for col_config in self._column_configs:
-            self._column_frame.columnconfigure(**col_config)
-        self._column_dict: dict[str, tkinter.Label] = dict()
+
+        self._title_row_frame = self._row_content_factory.create_row_frame(self._draw_member_lframe)
         for idx, ex_opts in enumerate(self._banner.draw_member_type._expose_opts()):
-            col_label = tkinter.Label(self._column_frame, text=ex_opts, **self._shared_cnf)
-            col_label.grid(row=0, column=idx, sticky="news")
-            self._column_dict[ex_opts] = col_label
-        
-        self._draw_content_frame = tkinter.Frame(self._draw_member_lframe)
-        self._draw_content_frame.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
+            self._title_row_frame.add_content(idx, tkinter.Label, {"text": ex_opts, "relief": "solid", "borderwidth": 1, "width": 1})
+        self._title_row_frame.pack(fill="x", ipady=10)
 
         self.draw_frame = tkinter.Frame(self._top_window)
         self.draw_frame.place(relx=0.25, rely=0, relwidth=0.75, relheight=1)
@@ -86,16 +75,18 @@ class DrawPage(TabPage):
         add_page = RemoveDrawMemeberPage(self, banner)
         add_page.render()
     def refresh_draw_container(self):
-        for widget in self._draw_content_frame.winfo_children():
-            widget.destroy()
+        for row_frame in self._draw_member_frames.values():
+            row_frame.destroy()
+        del self._draw_member_frames
+        self._draw_member_frames: dict[str, RowFrame] = dict()
         for dm in self._banner.draw_members.values():
-            dm_frame = tkinter.Frame(self._draw_content_frame)
-            dm_frame.pack(fill="x")
-            for col_config in self._column_configs:
-                dm_frame.columnconfigure(**col_config)
+            row_frame = self._row_content_factory.create_row_frame(self._draw_member_lframe)
+            row_frame.pack(fill="x")
             for idx, dm_key in enumerate(dm._expose_opts()):
-                value_label = tkinter.Label(dm_frame, text=dm.member_info[dm_key], **self._shared_cnf)
-                value_label.grid(row=0, column=idx, sticky="news")
+                row_frame.add_content(
+                    idx, tkinter.Label, {"text": dm.member_info[dm_key], "relief": "solid", "borderwidth": 1, "width": 1}
+                )
+            self._draw_member_frames[dm.name] = row_frame
     def draw(self, banner: BaseBanner[BaseDrawMember]):
         draw_name_list = list()
         draw_proportion_list = list()
