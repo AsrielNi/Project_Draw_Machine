@@ -90,7 +90,7 @@ class TabPageManager():
         self._menubar_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
         self._tab_frame = tkinter.LabelFrame(self._top_window, text="分頁")
         self._tab_frame.place(relx=0, rely=0.05, relwidth=0.2, relheight=0.95)
-        self._page_frame = tkinter.Frame(self._top_window)
+        self._page_frame = tkinter.Frame(self._top_window, relief="sunken", borderwidth=3)
         self._page_frame.place(relx=0.2, rely=0.05, relwidth=0.8, relheight=0.95)
         # 選單
         self._operate_mb = tkinter.Menubutton(self._menubar_frame, text="操作", background=self._menubar_frame["background"])
@@ -170,6 +170,10 @@ class TabPageManager():
         temp_list = [type_name for type_name in self._register_types.keys()]
         return tuple(temp_list)
     @property
+    def tab_page_list(self):
+        output_list = [tab_name for tab_name in self._tab_pages.keys()]
+        return output_list
+    @property
     def page_frame(self) -> tkinter.Frame:
         return self._page_frame
 
@@ -202,7 +206,12 @@ class CreateTabPage:
         self._tab_opt_frame.columnconfigure(index=1, weight=2)
         self._tab_opt_label = tkinter.Label(self._tab_opt_frame, text="分頁類型：", **self._shared_config)
         self._tab_opt_label.grid(row=0, column=0, sticky="news")
-        self._tab_cbbox = tkinter.ttk.Combobox(self._tab_opt_frame, values=self._parent_manager.register_names, width=1)
+        self._tab_cbbox = tkinter.ttk.Combobox(
+            self._tab_opt_frame,
+            values=self._parent_manager.register_names,
+            state="readonly",
+            width=1
+        )
         self._tab_cbbox.grid(row=0, column=1, sticky="news")
 
         self._button_frame = tkinter.Frame(self._interact_window)
@@ -244,11 +253,18 @@ class RemoveTabPage:
         self._name_opt_frame.pack(fill="x", pady=20)
         self._name_opt_frame.columnconfigure(index=0, weight=1)
         self._name_opt_frame.columnconfigure(index=1, weight=2)
+        self._name_opt_frame.columnconfigure(index=2, weight=1)
         self._name_opt_label = tkinter.Label(self._name_opt_frame, text="分頁的名稱：", **self._shared_config)
         self._name_opt_label.grid(row=0, column=0, sticky="news")
-        self._name_sv = tkinter.StringVar()
-        self._name_entry = tkinter.Entry(self._name_opt_frame, textvariable=self._name_sv, **self._shared_config)
-        self._name_entry.grid(row=0, column=1, sticky="news")
+        self._name_opt_cbbox = tkinter.ttk.Combobox(
+            self._name_opt_frame,
+            values=self._parent_manager.tab_page_list,
+            state="readonly",
+            width=1
+        )
+        self._name_opt_cbbox.grid(row=0, column=1, sticky="news")
+        self._refresh_button = tkinter.Button(self._name_opt_frame, text="更新", width=1, command=self._command_refresh_list)
+        self._refresh_button.grid(row=0, column=2, sticky="news")
 
         self._button_frame = tkinter.Frame(self._interact_window)
         self._button_frame.pack(fill="x", pady=20)
@@ -260,9 +276,14 @@ class RemoveTabPage:
         self._parent_manager._operate_menu.entryconfig(index="刪除分頁", state="normal")
         self._interact_window.destroy()
     def __command_confirm(self):
-        target_page_name = self._name_entry.get()
+        target_page_name = self._name_opt_cbbox.get()
         if target_page_name == "":
             raise ValueError()
-        self._parent_manager._remove_tab_page(target_page_name)
+        else:
+            self._parent_manager._remove_tab_page(target_page_name)
+            self._command_refresh_list()
     def __command_cancel(self):
         self.__on_closing()
+    def _command_refresh_list(self):
+        self._name_opt_cbbox.config(values=self._parent_manager.tab_page_list)
+        self._name_opt_cbbox.set("")

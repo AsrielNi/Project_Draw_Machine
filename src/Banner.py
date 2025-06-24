@@ -1,5 +1,6 @@
+import random
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Any, get_args
+from typing import TypeVar, Generic, get_args
 
 
 class IDrawMember(ABC):
@@ -49,31 +50,7 @@ class BaseDrawMember(IDrawMember):
         return self._member_info_dict["proportion"]
 
 
-class IBanner(ABC):
-    @abstractmethod
-    def __init__(self, banner_name: str):
-        raise NotImplementedError()
-    @abstractmethod
-    def add_draw_member(self, draw_member: Any):
-        raise NotImplementedError()
-    @abstractmethod
-    def remove_draw_member(self, draw_member: Any):
-        raise NotImplementedError()
-    @property
-    @abstractmethod
-    def banner_name(self) -> str:
-        raise NotImplementedError()
-    @property
-    @abstractmethod
-    def draw_members(self) -> dict[str, Any]:
-        raise NotImplementedError()
-    @property
-    @abstractmethod
-    def draw_member_type(self) -> type[Any]:
-        raise NotImplementedError()
-
-
-class BaseBanner(IBanner, Generic[DM]):
+class Banner(Generic[DM]):
     def __init__(self, banner_name: str):
         self._banner_name = banner_name
         self._draw_members: dict[str, DM] = dict()
@@ -87,6 +64,17 @@ class BaseBanner(IBanner, Generic[DM]):
             raise KeyError("該名稱({})並不存在。".format(draw_member_name))
         else:
             del self._draw_members[draw_member_name]
+    def draw(self) -> str:
+        if len(self._draw_members) == 0:
+            result = "抽獎池沒有任何東西"
+        else:
+            draw_name_list = list()
+            draw_proportion_list = list()
+            for draw_m in self._draw_members.values():
+                draw_name_list.append(draw_m.name)
+                draw_proportion_list.append(draw_m.proportion)
+            result = random.choices(draw_name_list, weights=draw_proportion_list)
+        return result
     @property
     def banner_name(self) -> str:
         return self._banner_name

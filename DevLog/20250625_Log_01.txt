@@ -1,0 +1,126 @@
+20250625_Log_01.txt
+
+摘要：
+    抽獎頁面的重置。
+    優化<DrawPage>、<AddDrawMemeberPage>、<RemoveDrawMemeberPage>的邏輯。
+    微調部分頁面的顯示。
+
+
+新增：
+    [Banner.py]
+        <BaseBanner>
+            {draw}
+                將抽獎的邏輯從[Page.py].<DrawPage>移至此，增加物件的邏輯內聚。
+    [Page.py]
+        <DrawPage>
+            類別屬性(_REGISTER_DMS)
+                表示抽獎頁面所註冊的抽選對象類別們。
+            物件屬性(draw_member_list)
+                表示目前抽獎池內的所有對象的名稱。
+            {_command_lock_draw_banner_type}
+                鎖定抽選對象的類別並增加與其他GUI元件互動的邏輯。
+            {_command_add_draw_member}
+                增加抽選對象到抽獎池。
+            {_command_remove_draw_member}
+                從抽獎池移除抽選對象。
+            {_command_reset_banner}
+                重置整個抽獎池。
+            {_command_draw}
+                從抽獎池物件獲得隨機結果。
+        <RemoveDrawMemeberPage>
+            {_command_refresh_list}
+                更新下拉式選單的內容。
+        <RemoveTabPage>
+            {_command_refresh_list}
+                更新下拉式選單的內容。
+
+
+改變：
+    [Banner.py]
+        <BaseBanner>
+            移除<IBanner>的繼承關係，因為該介面被移除了。
+    [Page.py]
+        <TestPage>
+            {layout}
+                增加提示用文字。
+        <DrawPage>
+            {__init__}
+                簡化建構時的邏輯，移除不需要的參數。
+            {layout}
+                因為需要版面重製的關係，大幅度地修改並追加數個按鈕。
+            {refresh_draw_container}
+                變更特定的變數名稱和微調排版。
+        <AddDrawMemeberPage>
+            修改特定的變數名稱(self._banner) -> (self._parent_page._draw_banner)
+            {__init__}
+                移除'banner'參數。
+        <RemoveDrawMemeberPage>
+            修改特定的變數名稱(self._banner) -> (self._parent_page._draw_banner)
+            {__init__}
+                移除'banner'參數。
+            {layout}
+                輸入數值的GUI元件變更為下拉式選單。
+                增加更新選單的按鈕。
+            {__confirm_member}
+                數值的取得改為下拉式選單。
+    [TabSystem.py]
+        <TabPageManager>
+            物件屬性(tab_page_list)
+                表示目前分頁管理器內的所有分頁的名稱。
+            {layout}
+                微調版面。
+        <CreateTabPage>
+            {layout}
+                將下拉式選單設置為'唯讀'。
+        <RemoveTabPage>
+            {layout}
+                輸入數值的GUI元件變更為下拉式選單。
+                增加更新選單的按鈕。
+            {__confirm_member}
+                數值的取得改為下拉式選單。
+  
+
+移除：
+    [Banner.py]
+        <IBanner>
+            在目前的設計上，該介面是多餘的，由<BaseBanner>做主導的父類。
+    [Page.py]
+        <DrawPage>
+            {open_add_draw_member_page}
+                部分邏輯轉移給{_command_add_draw_member}並統一名稱。
+            {open_remove_draw_member_page}
+                部分邏輯轉移給{_command_remove_draw_member}並統一名稱。
+            {draw}
+                大部分邏輯轉移給[Banner.py].<Banner>.{draw}後，統一名稱為{_command_draw}。
+        <AddDrawMemeberPage>
+            {render}
+                因為邏輯簡化的關係，不被使用而移除。
+        <RemoveDrawMemeberPage>
+            {render}
+                因為邏輯簡化的關係，不被使用而移除。
+
+
+可能的更新和優化想法(不一定會實現)：
+    結構切割
+        [S]分為分頁(TabPage)和普通頁面。
+        [S]分頁管理器的建立。
+    結構擴充
+        預設的首頁。
+        [S]分頁模式。
+        日誌系統。
+        [S]單一抽獎機具有多個抽獎池(Banner)。
+        外部導入抽獎池的資訊，可能使用'json'檔來實現。
+    功能擴充
+        [S]使比重影響抽獎機率。
+        連抽的功能。
+        紀錄並顯示抽獎的次數和結果的動態柱狀圖。
+    自定義的GUI元件
+        [S]表示一列資料的元件。
+    額外資訊
+        [S]每個被抽選的目標新增配置比重。
+    其他
+        抽獎動畫或圖片(目前沒有想法)。
+
+
+備註：
+    目前尚未加入任何的註解和註釋，預定在達到一定程度的進度後，再開始補述。
