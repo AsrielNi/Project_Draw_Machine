@@ -1,0 +1,13 @@
+{
+    "DrawMemberType": "BaseDrawMember",
+    "Members": [
+        {
+            "name": "Hello",
+            "proportion": 10
+        },
+        {
+            "name": "World",
+            "proportion": 20
+        }
+    ]
+}

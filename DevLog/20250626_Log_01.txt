@@ -1,0 +1,81 @@
+20250626_Log_01.txt
+
+摘要：
+    增加導入分頁和儲存分頁的功能。
+    增加導入抽獎池和儲存抽獎池的功能。
+    新增範例用的'json'檔案。
+
+
+新增：
+    [Lib.py]
+        常用的函式會歸納於此。
+        {load_json_file}
+            讀取'json'檔案中的資料。
+        {save_json_file}
+            將特定的資料儲存成'json'檔案。
+    [Page.py]
+        <DrawPage>
+            {_add_draw_member}
+                由<AddDrawMemeberPage>.{__confirm_member}切割而來的邏輯，僅負責將抽選對象加入抽獎池。
+            {__create_draw_member_title}
+                由<DrawPage>.{_command_lock_draw_banner_type}切割而來的邏輯，僅負責創建抽選對象的表格標頭。
+            {__auto_set_config_when_lock}
+                由<DrawPage>.{_command_lock_draw_banner_type}切割而來的邏輯，僅負責當觸發'鎖定'動作時，哪些GUI元件要調整。
+            {__auto_set_config_when_unlock}
+                由<DrawPage>.{_command_reset_banner}切割而來的邏輯，僅負責當觸發'重置'動作時，哪些GUI元件要調整。
+            {_command_import_banner}
+                導入抽獎池需要的'json'檔案。
+            {_command_save_banner}
+                將抽獎池的內容儲存成'json'檔案。
+    [TabSystem.py]
+        <TabPageManager>
+            {__command_import_tab_page}
+                導入分頁需要的'json'檔案。
+            __command_save_tab_page
+                將分頁儲存成'json'檔案。
+
+
+改變：
+    [Page.py]
+        <DrawPage>
+            {layout}
+                微調版面的分布。
+                新增導入抽獎池和儲存抽獎池的功能的按鈕。
+            {_command_lock_draw_banner_type}
+                將部分邏輯切割成多個方法，來符合一個方法做一件事的想法。
+            {_command_reset_banner}
+                將部分邏輯切割成多個方法，來符合一個方法做一件事的想法。
+        <AddDrawMemeberPage>
+            {__confirm_member}
+                將部分邏輯切割成多個方法，來符合一個方法做一件事的想法。
+    [TabSystem.py]
+        <TabPageManager>
+            {layout}
+                新增導入分頁和儲存分頁的功能的按鈕。
+
+
+可能的更新和優化想法(不一定會實現)：
+    結構切割
+        [S]分為分頁(TabPage)和普通頁面。
+        [S]分頁管理器的建立。
+    結構擴充
+        預設的首頁。
+        [S]分頁模式。
+        日誌系統。
+        [S]單一抽獎機具有多個抽獎池(Banner)。
+        外部導入抽獎池的資訊，可能使用'json'檔來實現。 -> [S]外部導入抽獎池的資訊和儲存抽獎池的資訊
+        [S]外部導入分頁的資訊和儲存分頁的資訊
+    功能擴充
+        [S]使比重影響抽獎機率。
+        連抽的功能。
+        紀錄並顯示抽獎的次數和結果的動態柱狀圖。
+    自定義的GUI元件
+        [S]表示一列資料的元件。
+    額外資訊
+        [S]每個被抽選的目標新增配置比重。
+    其他
+        抽獎動畫或圖片(目前沒有想法)。
+
+
+備註：
+    目前尚未加入任何的註解和註釋，預定在達到一定程度的進度後，再開始補述。

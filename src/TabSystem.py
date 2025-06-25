@@ -1,7 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import tkinter
+import tkinter.filedialog
 import tkinter.ttk
+from .Lib import load_json_file, save_json_file
 
 class ITabPage(ABC):
     @abstractmethod
@@ -97,6 +99,8 @@ class TabPageManager():
         self._operate_mb.pack(side="left")
         self._operate_menu = tkinter.Menu(self._operate_mb, tearoff=0)
         self._operate_menu.add_command(label="創建分頁", command=self.__command_create_tab_page)
+        self._operate_menu.add_command(label="導入分頁", command=self.__command_import_tab_page)
+        self._operate_menu.add_command(label="儲存分頁", command=self.__command_save_tab_page)
         self._operate_menu.add_command(label="刪除分頁", command=self.__command_remove_tab_page)
         self._operate_mb.config(menu=self._operate_menu)
     def register_page(self, type_of_page: type[ITabPage]):
@@ -140,6 +144,26 @@ class TabPageManager():
         new_sub_page = CreateTabPage(self, "創建分頁")
         new_sub_page.layout()
         self._operate_menu.entryconfig(index="創建分頁", state="disabled")
+    def __command_import_tab_page(self):
+        name_of_class = self.__class__.__name__
+        json_path = tkinter.filedialog.askopenfilename(filetypes=(("JSON file","*.json"),))
+        json_dict = load_json_file(json_path)
+        if json_dict.get(name_of_class) != None:
+            for tab_setting in json_dict[name_of_class]:
+                type_of_tab_page = self.register_types[tab_setting["PageType"]]
+                new_tab_page = type_of_tab_page(tab_setting["PageName"], self)
+                self._add_tab_page(new_tab_page)
+    def __command_save_tab_page(self):
+        name_of_class = self.__class__.__name__
+        save_path = tkinter.filedialog.asksaveasfilename(defaultextension=".json", filetypes=(("JSON file","*.json"),))
+        save_dict: dict[str, list[dict]] = {name_of_class: []}
+        for tab_page in self._tab_pages.values():
+            page_opt_dict = {
+                "PageName": tab_page.page_name,
+                "PageType": tab_page.__class__.__name__
+            }
+            save_dict[name_of_class].append(page_opt_dict)
+        save_json_file(save_dict, save_path)
     def __command_remove_tab_page(self):
         new_sub_page = RemoveTabPage(self, "刪除分頁")
         new_sub_page.layout()

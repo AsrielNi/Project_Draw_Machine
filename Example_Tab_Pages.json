@@ -1,0 +1,12 @@
+{
+    "TabPageManager": [
+        {
+            "PageName": "Test",
+            "PageType": "TestPage"
+        },
+        {
+            "PageName": "Banner_01",
+            "PageType": "DrawPage"
+        }
+    ]
+}
