@@ -52,7 +52,7 @@ class DrawPage(TabPage):
         self._lock_button = tkinter.Button(
             self._operate_frame,text="鎖定",
             width=1,
-            command=self._command_lock_draw_banner_type
+            command=self.__command_lock_draw_banner_type
         )
         self._lock_button.grid(row=0, column=4, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -61,7 +61,7 @@ class DrawPage(TabPage):
             text="新增",
             width=1,
             state="disabled",
-            command=self._command_add_draw_member
+            command=self.__command_add_draw_member
         )
         self._add_dm_button.grid(row=1, column=0, columnspan=2, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -70,7 +70,7 @@ class DrawPage(TabPage):
             text="移除",
             width=1,
             state="disabled",
-            command=self._command_remove_draw_member
+            command=self.__command_remove_draw_member
         )
         self._remove_dm_button.grid(row=1, column=2, columnspan=2, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -79,7 +79,7 @@ class DrawPage(TabPage):
             text="重置",
             width=1,
             state="disabled",
-            command=self._command_reset_banner
+            command=self.__command_reset_banner
         )
         self._reset_button.grid(row=1, column=4, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -87,7 +87,7 @@ class DrawPage(TabPage):
             self._operate_frame,
             text="導入抽獎池",
             width=1,
-            command=self._command_import_banner
+            command=self.__command_import_banner
         )
         self._import_banner_button.grid(row=2, column=0, columnspan=2, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -96,7 +96,7 @@ class DrawPage(TabPage):
             text="儲存抽獎池",
             width=1,
             state="disabled",
-            command=self._command_save_banner
+            command=self.__command_save_banner
         )
         self._save_banner_button.grid(row=2, column=2, columnspan=2, sticky="news", padx=2, pady=2, ipadx=2, ipady=2)
 
@@ -105,7 +105,7 @@ class DrawPage(TabPage):
             text="抽獎",
             width=1,
             state="disabled",
-            command=self._command_draw,
+            command=self.__command_draw,
             font=("標楷體", 36, "bold")
         )
         self._draw_button.grid(row=3, column=0, columnspan=4, sticky="news")
@@ -115,7 +115,7 @@ class DrawPage(TabPage):
 
         self._result_label = tkinter.Label(self._result_lframe, text="未抽選", width=1, font=("標楷體", 36, "bold"))
         self._result_label.pack(fill="both", expand=1)
-    def _command_lock_draw_banner_type(self):
+    def __command_lock_draw_banner_type(self):
         type_name = self._dm_cbbox.get()
         if self._REGISTER_DMS.get(type_name) == None:
             raise KeyError()
@@ -123,7 +123,7 @@ class DrawPage(TabPage):
             dm_type = self._REGISTER_DMS[type_name]
             self.__create_draw_member_title(dm_type)
             self.__auto_set_config_when_lock()
-    def _add_draw_member(self, value_pack_dict: dict[str, Any]):
+    def add_draw_member(self, value_pack_dict: dict[str, Any]):
         new_draw_member = self._draw_banner.draw_member_type(**value_pack_dict)
         self._draw_banner.add_draw_member(new_draw_member)
     def __create_draw_member_title(self, type_of_dm: type[IDrawMember]):
@@ -155,15 +155,15 @@ class DrawPage(TabPage):
         self._import_banner_button.config(state="normal")
         self._save_banner_button.config(state="disabled")
         self._result_label["text"] = "未抽選"
-    def _command_add_draw_member(self):
+    def __command_add_draw_member(self):
         self._add_dm_button.config(state="disabled")
         self._add_dm_page = AddDrawMemeberPage(self)
         self._add_dm_page.layout()
-    def _command_remove_draw_member(self):
+    def __command_remove_draw_member(self):
         self._remove_dm_button.config(state="disabled")
         self._remove_dm_page = RemoveDrawMemeberPage(self)
         self._remove_dm_page.layout()
-    def _command_reset_banner(self):
+    def __command_reset_banner(self):
         if hasattr(self, "_add_dm_page") == True:
             self._add_dm_page._interact_window.destroy()
             del self._add_dm_page
@@ -176,7 +176,7 @@ class DrawPage(TabPage):
             row_frame.destroy()
         self._draw_member_frames: dict[str, RowFrame] = dict()
         self.__auto_set_config_when_unlock()
-    def _command_import_banner(self):
+    def __command_import_banner(self):
         json_path = tkinter.filedialog.askopenfilename(filetypes=(("JSON file","*.json"),))
         json_dict = load_json_file(json_path)
         dm_type_name = json_dict["DrawMemberType"]
@@ -184,11 +184,11 @@ class DrawPage(TabPage):
             dm_type = self._REGISTER_DMS[dm_type_name]
             self.__create_draw_member_title(dm_type)
             for value_pack_dict in json_dict["Members"]:
-                self._add_draw_member(value_pack_dict)
+                self.add_draw_member(value_pack_dict)
             self._dm_cbbox.set(dm_type_name)
             self.__auto_set_config_when_lock()
             self.refresh_draw_container()
-    def _command_save_banner(self):
+    def __command_save_banner(self):
         save_path = tkinter.filedialog.asksaveasfilename(defaultextension=".json", filetypes=(("JSON file","*.json"),))
         save_dict = {
             "DrawMemberType": self._draw_banner.draw_member_type.__name__,
@@ -197,7 +197,7 @@ class DrawPage(TabPage):
         for dm in self._draw_banner.draw_members.values():
             save_dict["Members"].append(dm.member_info)
         save_json_file(save_dict, save_path)
-    def _command_draw(self):
+    def __command_draw(self):
         result = self._draw_banner.draw()
         self._result_label["text"] = result
     def refresh_draw_container(self):
@@ -250,7 +250,7 @@ class AddDrawMemeberPage:
                     value_pack_dict[dm_opt_name] = input_value
                 else:
                     raise TypeError("沒有從<str>轉換成<{}>的方法。".format(expect_type))
-        self._parent_page._add_draw_member(value_pack_dict)
+        self._parent_page.add_draw_member(value_pack_dict)
         self.__clear_input()
         self._parent_page.refresh_draw_container()
     def __clear_input(self):

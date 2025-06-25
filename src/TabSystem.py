@@ -114,13 +114,13 @@ class TabPageManager():
         def inner_func():
             func(*args, **kwargs)
         return inner_func
-    def _add_tab_page(self, tab_page: ITabPage):
+    def add_tab_page(self, tab_page: ITabPage):
         if self._tab_pages.get(tab_page.page_name) != None:
             raise KeyError()
         else:
             self._tab_pages[tab_page.page_name] = tab_page
             self._auto_build_tab_buttons()
-    def _remove_tab_page(self, page_name: str):
+    def remove_tab_page(self, page_name: str):
         if self._tab_pages.get(page_name) == None:
             raise KeyError()
         else:
@@ -152,7 +152,7 @@ class TabPageManager():
             for tab_setting in json_dict[name_of_class]:
                 type_of_tab_page = self.register_types[tab_setting["PageType"]]
                 new_tab_page = type_of_tab_page(tab_setting["PageName"], self)
-                self._add_tab_page(new_tab_page)
+                self.add_tab_page(new_tab_page)
     def __command_save_tab_page(self):
         name_of_class = self.__class__.__name__
         save_path = tkinter.filedialog.asksaveasfilename(defaultextension=".json", filetypes=(("JSON file","*.json"),))
@@ -256,7 +256,7 @@ class CreateTabPage:
             raise ValueError()
         new_page_type = self._parent_manager.register_types[new_page_type_key]
         new_page = new_page_type(new_page_name, self._parent_manager)
-        self._parent_manager._add_tab_page(new_page)
+        self._parent_manager.add_tab_page(new_page)
     def __command_cancel(self):
         self.__on_closing()
 
@@ -304,7 +304,7 @@ class RemoveTabPage:
         if target_page_name == "":
             raise ValueError()
         else:
-            self._parent_manager._remove_tab_page(target_page_name)
+            self._parent_manager.remove_tab_page(target_page_name)
             self._command_refresh_list()
     def __command_cancel(self):
         self.__on_closing()
