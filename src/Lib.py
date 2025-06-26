@@ -2,7 +2,7 @@ import os
 import json
 
 
-def load_json_file(json_path: str, encoding: str = "cp950") -> dict:
+def load_json_file(json_path: str, encoding: str = "UTF-8") -> dict:
     if os.path.isfile(json_path) == False:
         raise FileNotFoundError()
     else:
@@ -12,7 +12,7 @@ def load_json_file(json_path: str, encoding: str = "cp950") -> dict:
             json_dict = json.loads(all_content)
         return json_dict
 
-def save_json_file(data: dict, json_path: str, encoding: str = "cp950") -> None:
+def save_json_file(data: dict, json_path: str, encoding: str = "UTF-8") -> None:
     with open(json_path, mode="w", encoding=encoding) as save_file:
-        covert_data = json.dumps(data, indent=4)
+        covert_data = json.dumps(data, indent=4, ensure_ascii=False)
         save_file.write(covert_data)
