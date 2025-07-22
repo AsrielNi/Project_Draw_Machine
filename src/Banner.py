@@ -24,7 +24,7 @@ class IDrawMember(ABC):
 DM = TypeVar("DM", bound=IDrawMember)
 
 class BaseDrawMember(IDrawMember):
-    _EXPOSE_OPTS = ("name", "proportion") # 公開參數名稱必須和建構式的參數名稱完全一樣
+    _EXPOSE_OPTS: tuple[str, ...] = ("name", "proportion") # 公開參數名稱必須和建構式的參數名稱完全一樣
     @classmethod
     def _expose_opts(cls):
         temp_check_dict = dict()
@@ -40,7 +40,7 @@ class BaseDrawMember(IDrawMember):
         self._member_info_dict["name"] = name
         self._member_info_dict["proportion"] = proportion
     @property
-    def member_info(self):
+    def member_info(self) -> dict[str, str | int]:
         return self._member_info_dict
     @property
     def name(self) -> str:
@@ -52,14 +52,14 @@ class BaseDrawMember(IDrawMember):
 
 class Banner(Generic[DM]):
     def __init__(self, banner_name: str):
-        self._banner_name = banner_name
+        self._banner_name: str = banner_name
         self._draw_members: dict[str, DM] = dict()
-    def add_draw_member(self, draw_member: DM):
+    def add_draw_member(self, draw_member: DM) -> None:
         if self._draw_members.get(draw_member.name) != None:
             raise KeyError("該抽獎對象的名稱({})重複了".format(draw_member.name))
         else:
             self._draw_members[draw_member.name] = draw_member
-    def remove_draw_member(self, draw_member_name: str):
+    def remove_draw_member(self, draw_member_name: str) -> None:
         if self._draw_members.get(draw_member_name) == None:
             raise KeyError("該名稱({})並不存在。".format(draw_member_name))
         else:

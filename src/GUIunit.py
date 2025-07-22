@@ -58,6 +58,8 @@ class RowFrame(tkinter.Frame):
 
 class RowFrameFactory:
     def __init__(self, max_column_idx: int, ref_column_config: dict[str, Any] | None = None):
+        self._widget_type: type[tkinter.Widget]
+        self._widget_config: dict[str, Any]
         self._max_column_idx = max_column_idx
         self._ref_column_config = ref_column_config
         self._individual_configs: dict[int, dict[str, Any]] = dict()
