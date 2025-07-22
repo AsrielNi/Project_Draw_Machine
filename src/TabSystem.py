@@ -34,10 +34,10 @@ class ITabPage(ABC):
 
 class TabPage(ITabPage):
     def __init__(self, page_name: str, attach_manager: TabPageManager | None = None) -> None:
-        self._page_name = page_name
-        self._attach_manager = attach_manager
-        self._layout_flag = False
-        self._top_window = self._decide_master()
+        self._page_name: str = page_name
+        self._attach_manager: TabPageManager | None = attach_manager
+        self._layout_flag: bool = False
+        self._top_window: tkinter.Tk | tkinter.Frame = self._decide_master()
     def _decide_master(self) -> tkinter.Tk | tkinter.Frame:
         if self._attach_manager == None:
             top_window = tkinter.Tk()
@@ -76,8 +76,8 @@ class TabPage(ITabPage):
 
 class TabPageManager:
     def __init__(self, title_name: str = "NoName", init_window_size: str = "800x600+50+50"):
-        self._title_name = title_name
-        self._init_window_size = init_window_size
+        self._title_name: str = title_name
+        self._init_window_size: str = init_window_size
         self._current_page_name: str | None = None
         self._register_types: dict[str, type[ITabPage]] = dict()
         self._tab_pages: dict[str, ITabPage] = dict()

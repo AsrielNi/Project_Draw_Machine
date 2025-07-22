@@ -7,7 +7,7 @@ class RowFrame(tkinter.Frame):
     def __init__(self, master, max_column_idx: int, cnf={}, ref_column_config: dict[str, Any] | None = None, **kwargs):
         tkinter.Frame.__init__(self, master, cnf, **kwargs)
         self._column_widgets: dict[int, tkinter.Widget] = dict()
-        self._max_column_idx = max_column_idx
+        self._max_column_idx: int = max_column_idx
         if ref_column_config == None:
             self._initialize_all_column_config(self._DEFAULT_COLUMN_CONFIG)
         else:
@@ -60,8 +60,8 @@ class RowFrameFactory:
     def __init__(self, max_column_idx: int, ref_column_config: dict[str, Any] | None = None):
         self._widget_type: type[tkinter.Widget]
         self._widget_config: dict[str, Any]
-        self._max_column_idx = max_column_idx
-        self._ref_column_config = ref_column_config
+        self._max_column_idx: int = max_column_idx
+        self._ref_column_config: dict[str, Any] = ref_column_config
         self._individual_configs: dict[int, dict[str, Any]] = dict()
     def set_default_widget_per_column(self, widget_type: type[tkinter.Widget], widget_config: dict[str, Any]):
         self._widget_type = widget_type
