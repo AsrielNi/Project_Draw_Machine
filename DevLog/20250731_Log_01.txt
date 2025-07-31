@@ -1,0 +1,104 @@
+20250731_Log_01.txt
+
+摘要：
+    將頁面的GUI配置(layout)和頁面運作邏輯(指令觸發之類的)分開，類似於前後端分離(目前僅完成部分)。
+    增強程式碼的可讀性。
+    新增表單頁面及其相關元素的小模組。
+    開放UML的原始檔案(之前只有PNG檔)。
+    暫時移除導入和儲存的功能。
+
+
+新增：
+    [UML.drawio]
+        自此更新後，公開。
+    [Form.py]
+        該模組用於產生表單頁面。
+        <IFormLayout>
+            表單的GUI配置的抽象介面。
+        <DefaultFormLayout>
+            <IFormLayout>的範例實作。
+        <IQuestionWidget>
+            表示表單的問題的抽象介面。
+        <FillInBlankQuestionWidget>
+            <IQuestionWidget>的填空題實作。
+        <ComboBoxQuestionWidget>
+            <IQuestionWidget>的下拉式選擇實作。
+        <FormPage>
+            包含表單頁面的運作邏輯的類別，需要搭配版面來使用。
+    [Lib.py]
+        {wrap_func_to_thread}
+            將給定的函式或方法打包成執行緒獨立執行的函式物件。
+        {wrap_func}
+            將給定的函式或方法打包成函式物件，主要用於tkinter。
+    [TabSystem.py]
+        <ITabPageManagerLayout>
+            頁面管理器的GUI配置的抽象介面。
+        <DefaultLayoutTPM>
+            <ITabPageManagerLayout>的範例實作。
+        <TabPageManager>
+            {bind_button_command_to_widget}
+                連接指令到版面對應的GUI物件。
+
+
+改變：
+    [TabSystem.py]
+        <TabPage>
+            {_decide_master}
+                修改引用的GUI的對象。
+        <TabPageManager>
+            變更部分方法的名稱
+            {__init__}
+                修改創建式需要的參數。
+                大部分GUI物件的切割成<ITabPageManagerLayout>之子類。
+            {run}
+                加入版面的創建、部屬和指令連接的過程。
+
+
+移除：
+    [TabSystem.py]
+        <TabPageManager>
+            {wrap_command}
+                由公開函式[Lib.py].{wrap_func}取代。
+            {__command_import_tab_page}
+                暫時性的移除。
+            {__command_save_tab_page}
+                暫時性的移除。
+        <CreateTabPage>
+            因為該類別被表單頁面物件所取代，故移除。
+        <RemoveTabPage>
+            因為該類別被表單頁面物件所取代，故移除。
+        物件屬性(register_types)
+        物件屬性(register_names)
+        物件屬性(tab_page_list)
+        物件屬性(page_frame)
+
+
+
+可能的更新和優化想法(不一定會實現)：
+    結構切割
+        [S]分為分頁(TabPage)和普通頁面。
+        [S]分頁管理器的建立。
+        [WIP]分開版面配置和運作邏輯。
+    結構擴充
+        預設的首頁。
+        [S]分頁模式。
+        日誌系統。
+        [S]單一抽獎機具有多個抽獎池(Banner)。
+        [S]外部導入抽獎池的資訊和儲存抽獎池的資訊
+        [S]外部導入分頁的資訊和儲存分頁的資訊
+    功能擴充
+        [S]使比重影響抽獎機率。
+        連抽的功能。
+        紀錄並顯示抽獎的次數和結果的動態柱狀圖。
+    概念導圖
+        [S]UML。
+    自定義的GUI元件
+        [S]表示一列資料的元件。
+    額外資訊
+        [S]每個被抽選的目標新增配置比重。
+    其他
+        抽獎動畫或圖片(目前沒有想法)。
+
+
+備註：
+    目前尚未加入任何的註解和註釋，預定在達到一定程度的進度後，再開始補述。

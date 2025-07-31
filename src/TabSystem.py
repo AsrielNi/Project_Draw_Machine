@@ -1,10 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import tkinter
-import tkinter.filedialog
-import tkinter.ttk
-from typing import Any
-from .Lib import load_json_file, save_json_file
+import time
+from .Lib import wrap_func_to_thread, wrap_func
+from .Form import FormPage, FillInBlankQuestionWidget, ComboBoxQuestionWidget
+
 
 class ITabPage(ABC):
     @abstractmethod
@@ -43,7 +43,7 @@ class TabPage(ITabPage):
             top_window = tkinter.Tk()
             return top_window
         else:
-            top_window = tkinter.Frame(self._attach_manager.page_frame)
+            top_window = tkinter.Frame(self._attach_manager.layout.page_content_frame)
             return top_window
     def _show(self) -> None:
         if self._attach_manager == None:
@@ -74,42 +74,110 @@ class TabPage(ITabPage):
         return self._top_window
 
 
+class ITabPageManagerLayout(ABC):
+    @abstractmethod
+    def __init__(self, master) -> None:
+        raise NotImplementedError()
+    @abstractmethod
+    def create_widget(self) -> None:
+        raise NotImplementedError()
+    @abstractmethod
+    def deploy_widget(self) -> None:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def menubar_frame(self) -> tkinter.Frame:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def pages_frame(self) -> tkinter.Frame:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def page_content_frame(self) -> tkinter.Frame:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def operate_mb(self) -> tkinter.Menubutton:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def operate_menu(self) -> tkinter.Menu:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def select_page_button_color(self) -> str:
+        raise NotImplementedError()
+    @property
+    @abstractmethod
+    def unselect_page_button_color(self) -> str:
+        raise NotImplementedError()
+
+
+class DefaultLayoutTPM(ITabPageManagerLayout):
+    def __init__(self, master):
+        self.__master = master
+        self._menubar_frame: tkinter.Frame
+        self._pages_frame: tkinter.Frame
+        self._page_content_frame: tkinter.Frame
+        self._operate_mb: tkinter.Menubutton
+        self._operate_menu: tkinter.Menu
+    def create_widget(self):
+        self._menubar_frame = tkinter.Frame(self.__master, background="#D2CACA")
+        self._pages_frame = tkinter.Frame(self.__master)
+        self._page_content_frame = tkinter.Frame(self.__master, relief="sunken", borderwidth=3)
+        self._operate_mb = tkinter.Menubutton(self._menubar_frame, text="操作", background=self._menubar_frame["background"])
+        self._operate_menu = tkinter.Menu(self._operate_mb, tearoff=0)
+        self._operate_mb.config(menu=self._operate_menu)
+    def deploy_widget(self):
+        self._menubar_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
+        self._pages_frame.place(relx=0, rely=0.05, relwidth=0.25, relheight=0.95)
+        self._page_content_frame.place(relx=0.25, rely=0.05, relwidth=0.75, relheight=0.95)
+        self._operate_mb.pack(side="left", fill="y")
+    @property
+    def menubar_frame(self) -> tkinter.Frame:
+        return self._menubar_frame
+    @property
+    def pages_frame(self) -> tkinter.Frame:
+        return self._pages_frame
+    @property
+    def page_content_frame(self) -> tkinter.Frame:
+        return self._page_content_frame
+    @property
+    def operate_mb(self) -> tkinter.Menubutton:
+        return self._operate_mb
+    @property
+    def operate_menu(self) -> tkinter.Menu:
+        return self._operate_menu
+    @property
+    def select_page_button_color(self) -> str:
+        return "#90FFE5"
+    @property
+    def unselect_page_button_color(self) -> str:
+        return "#C5F6EB"
+
+
 class TabPageManager:
-    def __init__(self, title_name: str = "NoName", init_window_size: str = "800x600+50+50"):
-        self._title_name: str = title_name
-        self._init_window_size: str = init_window_size
-        self._current_page_name: str | None = None
+    def __init__(self, type_of_layout: type[ITabPageManagerLayout]) -> None:
         self._register_types: dict[str, type[ITabPage]] = dict()
         self._tab_pages: dict[str, ITabPage] = dict()
         self._tab_page_buttons: dict[str, tkinter.Button] = dict()
-        self.__select_color: str = "#90FFE5"
-        self.__unselect_color: str = "#C5F6EB"
-        self._top_window: tkinter.Tk
-        self._menubar_frame: tkinter.Frame
-        self._tab_frame: tkinter.Frame
-        self._page_frame: tkinter.Frame
-        self._operate_mb: tkinter.Menubutton
-        self._operate_menu: tkinter.Menu
-    def layout(self) -> None:
-        self._top_window = tkinter.Tk()
-        self._top_window.title(self._title_name)
-        self._top_window.geometry(self._init_window_size)
-        # 主要格局
-        self._menubar_frame = tkinter.Frame(self._top_window, background="#D2CACA")
-        self._menubar_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
-        self._tab_frame = tkinter.LabelFrame(self._top_window, text="分頁")
-        self._tab_frame.place(relx=0, rely=0.05, relwidth=0.2, relheight=0.95)
-        self._page_frame = tkinter.Frame(self._top_window, relief="sunken", borderwidth=3)
-        self._page_frame.place(relx=0.2, rely=0.05, relwidth=0.8, relheight=0.95)
-        # 選單
-        self._operate_mb = tkinter.Menubutton(self._menubar_frame, text="操作", background=self._menubar_frame["background"])
-        self._operate_mb.pack(side="left")
-        self._operate_menu = tkinter.Menu(self._operate_mb, tearoff=0)
-        self._operate_menu.add_command(label="創建分頁", command=self.__command_create_tab_page)
-        self._operate_menu.add_command(label="導入分頁", command=self.__command_import_tab_page)
-        self._operate_menu.add_command(label="儲存分頁", command=self.__command_save_tab_page)
-        self._operate_menu.add_command(label="刪除分頁", command=self.__command_remove_tab_page)
-        self._operate_mb.config(menu=self._operate_menu)
+        self._current_page_name: str | None = None
+        self.__main_window: tkinter.Tk = tkinter.Tk()
+        self.__type_of_layout: type[ITabPageManagerLayout] = type_of_layout
+        self.__layout: ITabPageManagerLayout
+    def refresh_pages_frame(self) -> None:
+        for widget in self.__layout.pages_frame.winfo_children():
+            widget.destroy()
+        for tab_page in self._tab_pages.values():
+            tab_button = tkinter.Button(
+                self.__layout.pages_frame,
+                text=tab_page.page_name,
+                command=wrap_func(self.button_command_change_page, tab_page),
+                background=self.__layout.unselect_page_button_color,
+            )
+            tab_button.pack(fill="x", padx=10, ipadx=10, pady=5)
+            self._tab_page_buttons[tab_page.page_name] = tab_button
     def register_page(self, type_of_page: type[ITabPage]) -> None:
         if issubclass(type_of_page, ITabPage) == True:
             regsiter_name = type_of_page.__name__
@@ -117,16 +185,11 @@ class TabPageManager:
                 raise KeyError("該分頁類型({})已經登記於管理器了。".format(regsiter_name))
             else:
                 self._register_types[regsiter_name] = type_of_page
-    def wrap_command(self, func, *args, **kwargs):
-        def inner_func():
-            func(*args, **kwargs)
-        return inner_func
     def add_tab_page(self, tab_page: ITabPage) -> None:
         if self._tab_pages.get(tab_page.page_name) != None:
             raise KeyError()
         else:
             self._tab_pages[tab_page.page_name] = tab_page
-            self._auto_build_tab_buttons()
     def remove_tab_page(self, page_name: str) -> None:
         if self._tab_pages.get(page_name) == None:
             raise KeyError()
@@ -134,206 +197,70 @@ class TabPageManager:
             self._tab_pages[page_name].top_window.destroy()
             del self._tab_pages[page_name]
             del self._tab_page_buttons[page_name]
-            self._auto_build_tab_buttons()
-    def _auto_build_tab_buttons(self) -> None:
-        for widget in self._tab_frame.winfo_children():
-            widget.destroy()
-        for tab_page in self._tab_pages.values():
-            tab_button = tkinter.Button(
-                self._tab_frame,
-                text=tab_page.page_name,
-                command=self.wrap_command(self.__command_change_page, tab_page),
-                background=self.__unselect_color,
-            )
-            tab_button.pack(fill="x", padx=10, ipadx=10, pady=5)
-            self._tab_page_buttons[tab_page.page_name] = tab_button
-    def __command_create_tab_page(self) -> None:
-        new_sub_page = CreateTabPage(self, "創建分頁")
-        new_sub_page.layout()
-        self._operate_menu.entryconfig(index="創建分頁", state="disabled")
-    def __command_import_tab_page(self) -> None:
-        name_of_class = self.__class__.__name__
-        json_path = tkinter.filedialog.askopenfilename(filetypes=(("JSON file","*.json"),))
-        json_dict = load_json_file(json_path)
-        if json_dict.get(name_of_class) != None:
-            for tab_setting in json_dict[name_of_class]:
-                type_of_tab_page = self.register_types[tab_setting["PageType"]]
-                new_tab_page = type_of_tab_page(tab_setting["PageName"], self)
-                self.add_tab_page(new_tab_page)
-    def __command_save_tab_page(self) -> None:
-        name_of_class = self.__class__.__name__
-        save_path = tkinter.filedialog.asksaveasfilename(defaultextension=".json", filetypes=(("JSON file","*.json"),))
-        save_dict: dict[str, list[dict]] = {name_of_class: []}
-        for tab_page in self._tab_pages.values():
-            page_opt_dict = {
-                "PageName": tab_page.page_name,
-                "PageType": tab_page.__class__.__name__
-            }
-            save_dict[name_of_class].append(page_opt_dict)
-        save_json_file(save_dict, save_path)
-    def __command_remove_tab_page(self) -> None:
-        new_sub_page = RemoveTabPage(self, "刪除分頁")
-        new_sub_page.layout()
-        self._operate_menu.entryconfig(index="刪除分頁", state="disabled")
-    def __command_change_page(self, tab_page: ITabPage) -> None:
+    def button_command_change_page(self, tab_page: ITabPage) -> None:
         if self._current_page_name == None:
             self._tab_pages[tab_page.page_name]._show()
-            self._tab_page_buttons[tab_page.page_name].config(state="disabled", background=self.__select_color)
+            self._tab_page_buttons[tab_page.page_name].config(
+                state="disabled",
+                background=self.__layout.select_page_button_color
+            )
         elif self._current_page_name != tab_page.page_name:
             if self._tab_pages.get(self._current_page_name) == None:
                 pass
             else:
                 self._tab_pages[self._current_page_name]._hide()
-                self._tab_page_buttons[self._current_page_name].config(state="normal", background=self.__unselect_color)
+                self._tab_page_buttons[self._current_page_name].config(
+                    state="normal",
+                    background=self.__layout.unselect_page_button_color
+                )
             self._tab_pages[tab_page.page_name]._show()
-            self._tab_page_buttons[tab_page.page_name].config(state="disabled", background=self.__select_color)
+            self._tab_page_buttons[tab_page.page_name].config(
+                state="disabled",
+                background=self.__layout.select_page_button_color
+            )
         else:
             raise AssertionError("未預期之錯誤。")
         self._current_page_name = tab_page.page_name
+    def button_command_create_page(self) -> None:
+        self.__layout.operate_menu.entryconfig("創建", state="disabled")
+        pop_up_window = tkinter.Toplevel(self.__main_window)
+        pop_up_window.geometry("600x400+100+100")
+        form_page = FormPage()
+        form_page.add_question(FillInBlankQuestionWidget("分頁名稱？"))
+        form_page.add_question(ComboBoxQuestionWidget("分頁的種類？", sorted(self._register_types.keys())))
+        form_page.deploy_to_master(pop_up_window)
+        while form_page.is_exist:
+            time.sleep(0.1)
+        page_name = form_page.result["分頁名稱？"]
+        tab_page_type = self._register_types[form_page.result["分頁的種類？"]]
+        new_tab_page = tab_page_type(page_name, self)
+        self.add_tab_page(new_tab_page)
+        self.refresh_pages_frame()
+        self.__layout.operate_menu.entryconfig("創建", state="normal")
+    def button_command_remove_page(self) -> None:
+        self.__layout.operate_menu.entryconfig("刪除", state="disabled")
+        pop_up_window = tkinter.Toplevel(self.__main_window)
+        pop_up_window.geometry("600x400+100+100")
+        form_page = FormPage()
+        form_page.add_question(ComboBoxQuestionWidget("分頁名稱？", sorted(self._tab_pages.keys())))
+        form_page.deploy_to_master(pop_up_window)
+        while form_page.is_exist:
+            time.sleep(0.1)
+        self.remove_tab_page(form_page.result["分頁名稱？"])
+        self.refresh_pages_frame()
+        self.__layout.operate_menu.entryconfig("刪除", state="normal")
+    def bind_button_command_to_widget(self) -> None:
+        self.__layout.operate_menu.add_command(label="創建", command=wrap_func_to_thread(self.button_command_create_page))
+        self.__layout.operate_menu.add_command(label="刪除", command=wrap_func_to_thread(self.button_command_remove_page))
     def run(self) -> None:
-        self.layout()
-        self._top_window.mainloop()
+        self.__layout = self.__type_of_layout(self.__main_window)
+        self.__layout.create_widget()
+        self.__layout.deploy_widget()
+        self.bind_button_command_to_widget()
+        self.__main_window.mainloop()
     @property
-    def register_types(self) -> dict[str, type[ITabPage]]:
-        return self._register_types
+    def main_window(self) -> tkinter.Tk:
+        return self.__main_window
     @property
-    def register_names(self) -> tuple[str, ...]:
-        temp_list = [type_name for type_name in self._register_types.keys()]
-        return tuple(temp_list)
-    @property
-    def tab_page_list(self) -> list[str]:
-        output_list = [tab_name for tab_name in self._tab_pages.keys()]
-        return output_list
-    @property
-    def page_frame(self) -> tkinter.Frame:
-        return self._page_frame
-
-
-class CreateTabPage:
-    def __init__(self, parent_manager: TabPageManager, title_name: str = "創建分頁", window_size: str = "300x200+100+100") -> None:
-        self._parent_manager: TabPageManager = parent_manager
-        self._interact_window: tkinter.Toplevel = tkinter.Toplevel()
-        self._interact_window.title(title_name)
-        self._interact_window.geometry(window_size)
-        self._interact_window.protocol("WM_DELETE_WINDOW", self.__on_closing)
-        self._shared_config: dict[str, Any] = {"relief": "solid", "borderwidth": 1, "width": 1}
-        self._page_info_label: tkinter.Label
-        self._name_opt_frame: tkinter.Frame
-        self._name_opt_label: tkinter.Label
-        self._name_sv: tkinter.StringVar
-        self._name_entry: tkinter.Entry
-        self._tab_opt_frame: tkinter.Frame
-        self._tab_opt_label: tkinter.Label
-        self._tab_cbbox: tkinter.ttk.Combobox
-        self._button_frame: tkinter.Frame
-        self._confirm_button: tkinter.Button
-        self._cancel_button: tkinter.Button
-    def layout(self) -> None:
-        self._page_info_label = tkinter.Label(self._interact_window, text="創建分頁需要的設定值")
-        self._page_info_label.pack(fill="x")
-
-        self._name_opt_frame = tkinter.Frame(self._interact_window)
-        self._name_opt_frame.pack(fill="x", pady=20)
-        self._name_opt_frame.columnconfigure(index=0, weight=1)
-        self._name_opt_frame.columnconfigure(index=1, weight=2)
-        self._name_opt_label = tkinter.Label(self._name_opt_frame, text="分頁的名稱：", **self._shared_config)
-        self._name_opt_label.grid(row=0, column=0, sticky="news")
-        self._name_sv = tkinter.StringVar()
-        self._name_entry = tkinter.Entry(self._name_opt_frame, textvariable=self._name_sv, **self._shared_config)
-        self._name_entry.grid(row=0, column=1, sticky="news")
-
-        self._tab_opt_frame = tkinter.Frame(self._interact_window)
-        self._tab_opt_frame.pack(fill="x", pady=20)
-        self._tab_opt_frame.columnconfigure(index=0, weight=1)
-        self._tab_opt_frame.columnconfigure(index=1, weight=2)
-        self._tab_opt_label = tkinter.Label(self._tab_opt_frame, text="分頁類型：", **self._shared_config)
-        self._tab_opt_label.grid(row=0, column=0, sticky="news")
-        self._tab_cbbox = tkinter.ttk.Combobox(
-            self._tab_opt_frame,
-            values=self._parent_manager.register_names,
-            state="readonly",
-            width=1
-        )
-        self._tab_cbbox.grid(row=0, column=1, sticky="news")
-
-        self._button_frame = tkinter.Frame(self._interact_window)
-        self._button_frame.pack(fill="x", pady=20)
-        self._confirm_button = tkinter.Button(self._button_frame, text="確認", command=self.__command_confirm)
-        self._confirm_button.pack(side="left", padx=5, ipadx=5)
-        self._cancel_button = tkinter.Button(self._button_frame, text="取消", command=self.__command_cancel)
-        self._cancel_button.pack(side="left", padx=5, ipadx=5)
-    def __on_closing(self) -> None:
-        self._parent_manager._operate_menu.entryconfig(index="創建分頁", state="normal")
-        self._interact_window.destroy()
-    def __command_confirm(self) -> None:
-        new_page_name = self._name_entry.get()
-        if new_page_name == "":
-            raise ValueError()
-        new_page_type_key = self._tab_cbbox.get()
-        if new_page_type_key == "":
-            raise ValueError()
-        new_page_type = self._parent_manager.register_types[new_page_type_key]
-        new_page = new_page_type(new_page_name, self._parent_manager)
-        self._parent_manager.add_tab_page(new_page)
-    def __command_cancel(self) -> None:
-        self.__on_closing()
-
-
-class RemoveTabPage:
-    def __init__(self, parent_manager: TabPageManager, title_name: str = "刪除分頁", window_size: str = "300x200+100+100") -> None:
-        self._parent_manager = parent_manager
-        self._interact_window = tkinter.Toplevel()
-        self._interact_window.title(title_name)
-        self._interact_window.geometry(window_size)
-        self._interact_window.protocol("WM_DELETE_WINDOW", self.__on_closing)
-        self._shared_config = {"relief": "solid", "borderwidth": 1, "width": 1}
-        self._page_info_label: tkinter.Label
-        self._name_opt_frame: tkinter.Frame
-        self._name_opt_label: tkinter.Label
-        self._name_opt_cbbox: tkinter.ttk.Combobox
-        self._refresh_button: tkinter.Button
-        self._button_frame: tkinter.Frame
-        self._confirm_button: tkinter.Button
-        self._cancel_button: tkinter.Button
-    def layout(self) -> None:
-        self._page_info_label = tkinter.Label(self._interact_window, text="刪除分頁需要的設定值")
-        self._page_info_label.pack(fill="x")
-
-        self._name_opt_frame = tkinter.Frame(self._interact_window)
-        self._name_opt_frame.pack(fill="x", pady=20)
-        self._name_opt_frame.columnconfigure(index=0, weight=1)
-        self._name_opt_frame.columnconfigure(index=1, weight=2)
-        self._name_opt_frame.columnconfigure(index=2, weight=1)
-        self._name_opt_label = tkinter.Label(self._name_opt_frame, text="分頁的名稱：", **self._shared_config)
-        self._name_opt_label.grid(row=0, column=0, sticky="news")
-        self._name_opt_cbbox = tkinter.ttk.Combobox(
-            self._name_opt_frame,
-            values=self._parent_manager.tab_page_list,
-            state="readonly",
-            width=1
-        )
-        self._name_opt_cbbox.grid(row=0, column=1, sticky="news")
-        self._refresh_button = tkinter.Button(self._name_opt_frame, text="更新", width=1, command=self._command_refresh_list)
-        self._refresh_button.grid(row=0, column=2, sticky="news")
-
-        self._button_frame = tkinter.Frame(self._interact_window)
-        self._button_frame.pack(fill="x", pady=20)
-        self._confirm_button = tkinter.Button(self._button_frame, text="確認", command=self.__command_confirm)
-        self._confirm_button.pack(side="left", padx=5, ipadx=5)
-        self._cancel_button = tkinter.Button(self._button_frame, text="取消", command=self.__command_cancel)
-        self._cancel_button.pack(side="left", padx=5, ipadx=5)
-    def __on_closing(self) -> None:
-        self._parent_manager._operate_menu.entryconfig(index="刪除分頁", state="normal")
-        self._interact_window.destroy()
-    def __command_confirm(self) -> None:
-        target_page_name = self._name_opt_cbbox.get()
-        if target_page_name == "":
-            raise ValueError()
-        else:
-            self._parent_manager.remove_tab_page(target_page_name)
-            self._command_refresh_list()
-    def __command_cancel(self) -> None:
-        self.__on_closing()
-    def _command_refresh_list(self) -> None:
-        self._name_opt_cbbox.config(values=self._parent_manager.tab_page_list)
-        self._name_opt_cbbox.set("")
+    def layout(self) -> ITabPageManagerLayout:
+        return self.__layout
