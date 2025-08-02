@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import tkinter
 import time
 from .Lib import wrap_func_to_thread, wrap_func
-from .Form import FormPage, FillInBlankQuestionWidget, ComboBoxQuestionWidget
+from .Form import FormPage, FillInBlankQuestionWidget, ComboBoxQuestionWidget, DefaultQuestionLayout
 
 
 class ITabPage(ABC):
@@ -225,10 +225,19 @@ class TabPageManager:
         self.__layout.operate_menu.entryconfig("創建", state="disabled")
         pop_up_window = tkinter.Toplevel(self.__main_window)
         pop_up_window.geometry("600x400+100+100")
-        form_page = FormPage()
-        form_page.add_question(FillInBlankQuestionWidget("分頁名稱？"))
-        form_page.add_question(ComboBoxQuestionWidget("分頁的種類？", sorted(self._register_types.keys())))
-        form_page.deploy_to_master(pop_up_window)
+        form_page = FormPage(pop_up_window)
+        form_page.add_question(FillInBlankQuestionWidget(
+            form_page.layout.form_frame,
+            "分頁名稱？",
+            DefaultQuestionLayout
+        ))
+        form_page.add_question(ComboBoxQuestionWidget(
+            form_page.layout.form_frame,
+            "分頁的種類？",
+            DefaultQuestionLayout,
+            sorted(self._register_types.keys())
+        ))
+        form_page.active_bind_command()
         while form_page.is_exist:
             time.sleep(0.1)
         page_name = form_page.result["分頁名稱？"]
@@ -241,9 +250,14 @@ class TabPageManager:
         self.__layout.operate_menu.entryconfig("刪除", state="disabled")
         pop_up_window = tkinter.Toplevel(self.__main_window)
         pop_up_window.geometry("600x400+100+100")
-        form_page = FormPage()
-        form_page.add_question(ComboBoxQuestionWidget("分頁名稱？", sorted(self._tab_pages.keys())))
-        form_page.deploy_to_master(pop_up_window)
+        form_page = FormPage(pop_up_window)
+        form_page.add_question(ComboBoxQuestionWidget(
+            form_page.layout.form_frame,
+            "分頁名稱？",
+            DefaultQuestionLayout,
+            sorted(self._tab_pages.keys())
+        ))
+        form_page.active_bind_command()
         while form_page.is_exist:
             time.sleep(0.1)
         self.remove_tab_page(form_page.result["分頁名稱？"])
